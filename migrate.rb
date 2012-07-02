@@ -22,7 +22,8 @@ opts = {
   :debug => false,
   :port  => 2000,
   :interval => 59,
-  :caching  => -1
+  :caching  => -1,
+  :wal      => false,
 }
 
 opt = OptionParser.new do |o|
@@ -60,6 +61,10 @@ opt = OptionParser.new do |o|
 
   o.on( "-c", "--caching integer", Integer, "HBase scan caching value." ) do |c|
     opts[:caching] = c
+  end
+
+  o.on( "-w", "--writeToWAL", "Write wo WriteAheadLog in HBase regionserver for puts. Only makes sense in the client." ) do |w|
+    opts[:wal] = w
   end
 
 end
@@ -152,6 +157,7 @@ class HBaseStreamClient
       # print "rowKey => #{rowKey}"
       rowKey.chomp!
       put = Put.new rowKey.to_java_bytes
+      put.writeToWAL( @opts[:wal] )
       HBaseStreamProtocol.fields_with_family.each do |key|
         val = socket.gets
         val.chomp!
