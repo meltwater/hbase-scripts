@@ -203,7 +203,7 @@ class HBaseStreamServer
 
         scan = Scan.new start.to_java_bytes, _end.to_java_bytes
         HBaseStreamProtocol.fields.each do |key|
-          scan.addColumn key
+          scan.addColumn key.to_java_bytes
         end
 
         scanner = table.getScanner scan
