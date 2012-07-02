@@ -158,6 +158,9 @@ class HBaseStreamClient
       else
         table.put put
         news = news + 1
+        if news % 1000 == 0
+          puts "Added #{news} items, last rowKey added #{rowKey}"
+        end
       end
     end
 
