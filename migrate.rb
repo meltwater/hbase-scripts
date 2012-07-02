@@ -202,40 +202,42 @@ class HBaseStreamServer
 
     server = TCPServer.new @opts[:port]
 
-    table = connect_table
 
     while client = server.accept
-      begin
-        puts "client connected."
+      fork do
+        begin
+          table = connect_table
+          puts "client connected."
 
-        timestamp_start = client.gets
-        timestamp_end = client.gets
+          timestamp_start = client.gets
+          timestamp_end = client.gets
 
-        puts "asking for range #{timestamp_start} to #{timestamp_end}"
+          puts "asking for range #{timestamp_start} to #{timestamp_end}"
 
-        start = sprintf "%s00000000", timestamp_start
-        _end  = sprintf "%s99zzzzzz", timestamp_end
+          start = sprintf "%s00000000", timestamp_start
+          _end  = sprintf "%s99zzzzzz", timestamp_end
 
-        scan = Scan.new start.to_java_bytes, _end.to_java_bytes
-        HBaseStreamProtocol.fields[1..-1].each do |key|
-          scan.addColumn key.to_java_bytes
-        end
-
-        scanner = table.getScanner scan
-        count = 0
-        while row = scanner.next
-          client.puts String.from_java_bytes row.getRow
-          HBaseStreamProtocol.fields_with_family.each do |key|
-              value = row.getValue( *key )
-              out = String.from_java_bytes( value ).gsub( /\n/, "<DEADBEEF>>" ) rescue ""
-              client.puts out
+          scan = Scan.new start.to_java_bytes, _end.to_java_bytes
+          HBaseStreamProtocol.fields[1..-1].each do |key|
+            scan.addColumn key.to_java_bytes
           end
-          count = count + 1
+
+          scanner = table.getScanner scan
+          count = 0
+          while row = scanner.next
+            client.puts String.from_java_bytes row.getRow
+            HBaseStreamProtocol.fields_with_family.each do |key|
+                value = row.getValue( *key )
+                out = String.from_java_bytes( value ).gsub( /\n/, "<DEADBEEF>>" ) rescue ""
+                client.puts out
+            end
+            count = count + 1
+          end
+          client.close
+          puts "disconnecting client. streamed #{count} objects."
+        rescue Errno::ECONNRESET
+          puts "client disconnected."
         end
-        client.close
-        puts "disconnecting client. streamed #{count} objects."
-      rescue Errno::ECONNRESET
-        puts "client disconnected."
       end
     end # loop
   end # listen
