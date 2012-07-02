@@ -99,3 +99,14 @@ after doing an alter. In other words:
 This is a regular ruby script, not a JRuby script.
 
   ./scrape_online_regions.rb MyTableName host1 host2 host3 ...
+
+= Migrating data from HBase 0.20 to 0.90 and vice versa
+
+migrate.rb runs in two modes, client and server. On the master of the HBase to stream from, set up the server:
+
+  /path/to/hbase/bin/hbase org.jruby.Main ./migrate.rb -m server -p 2000
+
+On the master of the HBase to stream to, start the client.
+
+  /path/to/hbase/bin/hbase org.jruby.Main ./migrate.rb -m client -s server-host.example.com -p 2000 -t 1340755200 -i 3599
+
