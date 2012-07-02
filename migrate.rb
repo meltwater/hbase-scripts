@@ -204,7 +204,7 @@ class HBaseStreamServer
 
 
     while client = server.accept
-      fork do
+      Thread.new do
         begin
           table = connect_table
           puts "client connected."
