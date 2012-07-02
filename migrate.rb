@@ -219,6 +219,8 @@ class HBaseStreamServer
         HBaseStreamProtocol.fields[1..-1].each do |key|
           scan.addColumn key.to_java_bytes
         end
+        puts "caching is set to " + scan.getCaching() + " - setting it to 100"
+        scan.setCaching( 100 )
 
         scanner = table.getScanner scan
         count = 0
@@ -233,6 +235,7 @@ class HBaseStreamServer
         end
         client.close
         puts "disconnecting client. streamed #{count} objects."
+        scanner.close()
       rescue Errno::ECONNRESET
         puts "client disconnected."
       end
