@@ -179,12 +179,10 @@ class HBaseStreamServer
   end
 
   def connect_table
-
     config = HBaseConfiguration.create
     config.set 'fs.default.name', config.get(HConstants::HBASE_DIR)
-
+    
     HTable.new config, 'buzz_data'.to_java_bytes
-
   end
 
   def listen
@@ -226,10 +224,8 @@ class HBaseStreamServer
       rescue Errno::ECONNRESET
         puts "client disconnected."
       end
-    end
-      
-    end
-  end
+    end # loop
+  end # listen
 
 end
 
