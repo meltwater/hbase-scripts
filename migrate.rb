@@ -173,9 +173,70 @@ class HBaseStreamClient
   end
 end
 
+class HBaseStreamServer
+  def initialize opts
+    @opts = opts
+  end
+
+  def connect_table
+
+    config = HBaseConfiguration.create
+    config.set 'fs.default.name', config.get(HConstants::HBASE_DIR)
+
+    HTable.new config, 'buzz_data'.to_java_bytes
+
+  end
+
+  def listen
+
+    server = TCPServer.new @opts[:port]
+
+    table = connect_table
+
+    while client = server.accept
+      begin
+        puts "client connected."
+
+        timestamp_start = client.gets
+        timestamp_end = client.gets
+
+        puts "asking for range #{timestamp_start} to #{timestamp_end}"
+
+        start = sprintf "%s00000000", timestamp_start
+        _end  = sprintf "%s99zzzzzz", timestamp_end
+
+        scan = Scan.new start.to_java_bytes, _end.to_java_bytes
+        fields.each do |key|
+          scan.addColumn key
+        end
+
+        scanner = table.getScanner scan
+        count = 0
+        while row = scanner.next
+          client.puts String.from_java_bytes row.getRow
+          HBaseStreamProtocol.fields_with_family.each do |key|
+              value = row.getValue( *key )
+              out = String.from_java_bytes( value ).gsub( /\n/, "<DEADBEEF>>" ) rescue ""
+              client.puts out
+          end
+          count = count + 1
+        end
+        client.close
+        puts "disconnecting client. streamed #{count} objects."
+      rescue Errno::ECONNRESET
+        puts "client disconnected."
+      end
+    end
+      
+    end
+  end
+
+end
+
 if opts[:mode].to_s == "client"
   client = HBaseStreamClient.new opts
   client.receive
 else
-  puts "Not yet merged server into script."
+  server = HBAseSTreamServer.new opts
+  server.listen
 end
