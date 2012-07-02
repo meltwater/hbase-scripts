@@ -106,7 +106,7 @@ class HBaseStreamProtocol
 
   # returns an array of arrays ( [ family, column ] ), those being java byte[]
   def self.fields_with_family
-    @@FILEDS_WITH_FAMILY
+    @@FIELDS_WITH_FAMILY
   end
 
 end
