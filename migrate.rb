@@ -67,8 +67,6 @@ if opts[:mode].nil? ||
   exit 
 end
 
-p opts
-
 class HBaseStreamProtocol
   @@VERSION = 1
   @@PROTOCOL = %w{
@@ -233,6 +231,6 @@ if opts[:mode].to_s == "client"
   client = HBaseStreamClient.new opts
   client.receive
 else
-  server = HBAseSTreamServer.new opts
+  server = HBaseStreamServer.new opts
   server.listen
 end
