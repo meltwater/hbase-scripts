@@ -202,7 +202,7 @@ class HBaseStreamServer
         _end  = sprintf "%s99zzzzzz", timestamp_end
 
         scan = Scan.new start.to_java_bytes, _end.to_java_bytes
-        fields.each do |key|
+        HBaseStreamProtocol.fields.each do |key|
           scan.addColumn key
         end
 
