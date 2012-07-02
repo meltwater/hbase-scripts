@@ -22,6 +22,7 @@ opts = {
   :debug => false,
   :port  => 2000,
   :interval => 59,
+  :caching  => -1
 }
 
 opt = OptionParser.new do |o|
@@ -55,6 +56,10 @@ opt = OptionParser.new do |o|
 
   o.on( "-i", "--interval INTERVAL", Integer, "seconds from (and including) opts[:timestamp] to stream data for. Usually, this would not be % 10 == 0 (think about it)." ) do |i|
     opts[:interval] = i
+  end
+
+  o.on( "-c", "--caching integer", Integer, "HBase scan caching value." ) do |c|
+    opts[:caching] = c
   end
 
 end
@@ -219,8 +224,8 @@ class HBaseStreamServer
         HBaseStreamProtocol.fields[1..-1].each do |key|
           scan.addColumn key.to_java_bytes
         end
-        puts "caching is set to #{scan.getCaching()} - setting it to 100"
-        scan.setCaching( 100 )
+        puts "caching is set to #{scan.getCaching()} - setting it to #{@opts[:caching]}"
+        scan.setCaching( @opts[:caching] )
 
         scanner = table.getScanner scan
         count = 0
