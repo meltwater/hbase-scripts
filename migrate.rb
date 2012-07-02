@@ -45,7 +45,7 @@ opt = OptionParser.new do |o|
     opts[:server] = s
   end
 
-  o.on( "-p", "--port PORT", "port on server to listen on (server mode) or receive data from (client mode)" ) do |p|
+  o.on( "-p", "--port PORT", Integer, "port on server to listen on (server mode) or receive data from (client mode)" ) do |p|
     opts[:port] = p
   end
 
