@@ -26,7 +26,7 @@ opts = {
 
 opt = OptionParser.new do |o|
 
-  o.banner = "Usage: #{$0} -m (client|server) [options]"
+  o.banner = "Usage: hbase org.jruby.Main #{$0} -m (client|server) [options]"
 
   o.on( "-m", "--mode MODE", [ :client, :server ], "Execution mode: client or server. If mode is 'client', you must specify a server (-s host), and a timestamp (-t UNIX epoach) to start from." ) do |mode|
     opts[:mode] = mode
@@ -111,10 +111,18 @@ end
 
 class HBaseStreamClient
 
+  # opts is a hashtable that should at least include
+  # :timestamp => timestamp toi start the data stream, 
+  # :interval  => how many seconds of data to stream,
+  # :server    => the remote migrate server,
+  # :port      => the port the remote server listens on.
   def initialize opts
     @opts = opts
   end
 
+  # receive data from remote HBase and put into local HBase
+  # if @opts[:debug] is set, it will perform a dry run - only stream data, but not put into HBase
+  # - in this case it will also check whether data for that key is already in HBase.
   def receive
     start_time = Time.now
     
@@ -175,10 +183,13 @@ class HBaseStreamClient
 end
 
 class HBaseStreamServer
+  # opts is a hashtable that should at least include
+  # :port => the port to listen on
   def initialize opts
     @opts = opts
   end
 
+  # get the HTable instance for the buzz_data table
   def connect_table
     config = HBaseConfiguration.create
     config.set 'fs.default.name', config.get(HConstants::HBASE_DIR)
@@ -186,6 +197,7 @@ class HBaseStreamServer
     HTable.new config, 'buzz_data'.to_java_bytes
   end
 
+  # listen for connections and stream data over.
   def listen
 
     server = TCPServer.new @opts[:port]
@@ -229,6 +241,8 @@ class HBaseStreamServer
   end # listen
 
 end
+
+# main()
 
 if opts[:mode].to_s == "client"
   client = HBaseStreamClient.new opts
