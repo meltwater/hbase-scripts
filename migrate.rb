@@ -82,6 +82,7 @@ class HBaseStreamProtocol
   @@PROTOCOL = %w{
     rowkey
     fm_contents:bodyText 
+    fm_contents:cleanedText 
     fm_contents:title
     fm_input_info:author
     fm_input_info:baseurl
@@ -93,6 +94,7 @@ class HBaseStreamProtocol
     fm_input_info:sourceCode
     fm_input_info:sourceId
     fm_input_info:url
+    fm_input_info:sentiment
   }
 
   @@FIELDS_WITH_FAMILY = []
@@ -149,6 +151,8 @@ class HBaseStreamClient
     socket.puts( @opts[:timestamp] + @opts[:interval] ).to_s
     dupes = 0
     news = 0
+
+    puts = []
     
     while true
       obj = {}
@@ -157,7 +161,7 @@ class HBaseStreamClient
       # print "rowKey => #{rowKey}"
       rowKey.chomp!
       put = Put.new rowKey.to_java_bytes
-      put.writeToWAL( @opts[:wal] )
+      put.setWriteToWAL( @opts[:wal] )
       HBaseStreamProtocol.fields_with_family.each do |key|
         val = socket.gets
         val.chomp!
@@ -175,10 +179,13 @@ class HBaseStreamClient
           news = news + 1
         end
       else
-        table.put put
+        # table.put put
+        puts << put
         news = news + 1
-        if news % 1000 == 0
+        if news % 5000 == 0
           puts "Added #{news} items, last rowKey added #{rowKey}. Took: #{Time.now - start_time} seconds so far..."
+          table.put puts
+          puts = []
         end
       end
     end
@@ -188,7 +195,7 @@ class HBaseStreamClient
     else
       table.flushCommits
       table.close
-      puts "client disconnected. Added #{news} items. Took: #{Time.now - start_time} seconds."
+      puts "client disconnected - bulk. Added #{news} items. Took: #{Time.now - start_time} seconds."
     end
   end
 end
