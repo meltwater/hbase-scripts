@@ -209,7 +209,7 @@ class HBaseStreamServer
 
   # get the HTable instance for the buzz_data table
   def connect_table
-    config = HBaseConfiguration.create
+    config = HBaseConfiguration.create rescue HBaseConfiguration.new
     config.set 'fs.default.name', config.get(HConstants::HBASE_DIR)
     
     HTable.new config, 'buzz_data'.to_java_bytes
