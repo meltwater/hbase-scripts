@@ -4,8 +4,8 @@ MONTH=$1
 DAY=$2
 SERVER=$3
 
-if [ -z "$MONTH" -o -z "$DAY" -o -z "$PORT" ]; then
-    echo "Usage: $0 month day port"
+if [ -z "$MONTH" -o -z "$DAY" -o -z "$SERVER" ]; then
+    echo "Usage: $0 month day server"
     exit 1
 fi
 
