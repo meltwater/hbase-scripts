@@ -11,7 +11,7 @@ if [ -z "$MONTH" -o -z "$DAY" -o -z "$SERVER" ]; then
     exit 1
 fi
 
-ssh $SERVER 'ps auxw | grep migrate.r[b] || /opt/software/hbase-scripts/server.sh'
+ssh $SERVER 'if [ !-e /opt/software/hbase-scripts ]; then ( cd /opt/software && git clone git://github.com/meltwater/hbase-scripts ); fi; ps auxw | grep migrate.r[b] || /opt/software/hbase-scripts/server.sh'
 echo "started server, sleeping 2.."
 sleep 2
 
