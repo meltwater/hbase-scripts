@@ -1,6 +1,7 @@
 #!/bin/sh
 
-HBASE=/opt/mapr/hbase/hbase-0.90.4/bin/hbase
+# HBASE=/opt/mapr/hbase/hbase-0.90.4/bin/hbase
+HBASE=/opt/software/hbase/bin/hbase
 LOGPATH=/var/log/hbase/logs
 PORT=2000
 
