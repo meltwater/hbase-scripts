@@ -143,56 +143,66 @@ class HBaseStreamClient
     
     table = HTable.new config, 'buzz_data'.to_java_bytes
     # table.setAutoFlush true
-    
-    socket = TCPSocket.new @opts[:server], @opts[:port]
-    # block until disconnected by server
-    
-    socket.puts @opts[:timestamp].to_s
-    socket.puts( @opts[:timestamp] + @opts[:interval] ).to_s
+    retries = 3 
     dupes = 0
     news = 0
 
     puts = []
-    
-    while true
-      obj = {}
-      rowKey = socket.gets
-      break if rowKey.nil?
-      # print "rowKey => #{rowKey}"
-      rowKey.chomp!
-      put = Put.new rowKey.to_java_bytes
-      put.setWriteToWAL( @opts[:wal] )
-      HBaseStreamProtocol.fields_with_family.each do |key|
-        val = socket.gets
-        val.chomp!
-        val.gsub!( /<DEADBEEF>>/, "\n" )
-        # print "#{key} => #{val}"
-        put.add key[0], key[1], val.to_java_bytes
-      end
-      if @opts[:debug]
-        get = Get.new rowKey.to_java_bytes
-        if table.exists get
-          puts "exists: #{rowKey}"
-          dupes = dupes + 1
+   
+    begin
+      socket = TCPSocket.new @opts[:server], @opts[:port]
+      # block until disconnected by server
+      
+      socket.puts @opts[:timestamp].to_s
+      socket.puts( @opts[:timestamp] + @opts[:interval] ).to_s
+      while true
+        obj = {}
+        rowKey = socket.gets
+        break if rowKey.nil?
+        # print "rowKey => #{rowKey}"
+        rowKey.chomp!
+        put = Put.new rowKey.to_java_bytes
+        put.setWriteToWAL( @opts[:wal] )
+        HBaseStreamProtocol.fields_with_family.each do |key|
+          val = socket.gets
+          val.chomp!
+          val.gsub!( /<DEADBEEF>>/, "\n" )
+          # print "#{key} => #{val}"
+          put.add key[0], key[1], val.to_java_bytes
+        end
+        if @opts[:debug]
+          get = Get.new rowKey.to_java_bytes
+          if table.exists get
+            puts "exists: #{rowKey}"
+            dupes = dupes + 1
+          else
+            puts "new: #{rowKey}"
+            news = news + 1
+          end
         else
-          puts "new: #{rowKey}"
+          # table.put put
+          puts << put
           news = news + 1
+          if news % 5000 == 0
+            puts "Added #{news} items, last rowKey added #{rowKey}. Took: #{Time.now - start_time} seconds so far..."
+            table.put puts
+            puts = []
+          end
         end
-      else
-        # table.put put
-        puts << put
-        news = news + 1
-        if news % 5000 == 0
-          puts "Added #{news} items, last rowKey added #{rowKey}. Took: #{Time.now - start_time} seconds so far..."
-          table.put puts
-          puts = []
-        end
+      end
+    rescue
+      socket.close
+      retries = retries - 1
+      unless retries <= 0
+        sleep 3
+        retry
       end
     end
-
+        
     if @opts[:debug]
       puts "client disconnected. Added #{news} items, already had #{dupes} items. Took: #{Time.now - start_time} seconds."
     else
+      table.put puts
       table.flushCommits
       table.close
       puts "client disconnected - bulk. Added #{news} items. Took: #{Time.now - start_time} seconds."
@@ -256,6 +266,8 @@ class HBaseStreamServer
         scanner.close()
       rescue Errno::ECONNRESET
         puts "client disconnected."
+      rescue Exception => e
+        puts e
       end
     end # loop
   end # listen
