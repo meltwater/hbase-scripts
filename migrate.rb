@@ -191,11 +191,13 @@ class HBaseStreamClient
         end
       end
     rescue
-      socket.close
-      retries = retries - 1
-      unless retries <= 0
-        sleep 3
-        retry
+      unless socket.nil?
+        socket.close
+        retries = retries - 1
+        unless retries <= 0
+          sleep 3
+          retry
+        end
       end
     end
         
