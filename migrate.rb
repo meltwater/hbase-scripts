@@ -270,6 +270,7 @@ class HBaseStreamServer
         puts "client disconnected."
       rescue Exception => e
         puts e
+        client.disconnect
       end
     end # loop
   end # listen
